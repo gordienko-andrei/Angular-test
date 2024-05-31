@@ -12,11 +12,13 @@
           (change)="handleSelectDeselectAll($event)"
         />
       </th>
-      <th class="numChecked">
-        <span *ngIf="numCheckboxesSelected"
-          >Выбрано {{ numCheckboxesSelected }}</span
-        >
-        <span *ngIf="!numCheckboxesSelected">Нет</span>
+      <th class="numChecked" [ngSwitch]="numCheckboxesSelected">
+        <span *ngSwitchCase="numCheckboxesSelected">
+          Выбрано {{ numCheckboxesSelected }}
+        </span>
+        <span *ngSwitchDefault>
+          Нет
+        </span>
       </th>
     </tr>
     <tr>
@@ -49,9 +51,9 @@
         </td>
         <td>{{ issue.name }}</td>
         <td>{{ issue.message }}</td>
-        <td>
-          <span class="openCircle" *ngIf="issue.status === 'open'"></span>
-          <span class="resolvedCircle" *ngIf="issue.status !== 'open'"></span>
+        <td [ngSwitch]="issue.status">
+            <span class="openCircle" *ngSwitchCase="'open'"></span>
+            <span class="resolvedCircle" *ngSwitchDefault></span>
         </td>
       </tr>
     </ng-container>

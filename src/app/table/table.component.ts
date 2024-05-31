@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
+import { ErrorIssue } from '../interfaces/ErrorIssue';
+import { CheckedStateInterface } from '../interfaces/CheckedStateInterface';
 
 @Component({
   selector: 'app-table',
@@ -9,11 +11,11 @@ import { Component, Input, OnInit } from '@angular/core';
   imports: [CommonModule],
 })
 export class Table implements OnInit {
-  @Input() issues: any;
+  @Input() issues: ErrorIssue[] = [];
 
   selectDeselectAllIsChecked = false;
   numCheckboxesSelected = 0;
-  checkedState: any;
+  checkedState: CheckedStateInterface[] = [];
 
   ngOnInit() {
     this.checkedState = new Array(this.issues.length).fill({
@@ -22,75 +24,65 @@ export class Table implements OnInit {
     });
   }
 
-  getStylesTr(issue: any) {
+  getStylesTr(issue: ErrorIssue) {
     return issue.status === 'open' ? 'openIssue' : 'closedIssue';
   }
 
-  onClick(index: any, issue: any) {
+  onClick(index: number, issue: ErrorIssue) {
     if (issue.status === 'open') {
       this.handleOnChange(index);
     }
   }
 
-  handleOnChange(position: any) {
+  handleOnChange(position: number) {
     const updatedCheckedState = this.checkedState.map(
-      (element: any, index: any) => {
+      (element: CheckedStateInterface, index: number) => {
         if (position === index) {
-          return {
-            ...element,
-            checked: !element.checked,
-            backgroundColor: element.checked ? '#ffffff' : '#eeeeee',
-          };
+          const { checked } = element;
+          const backgroundColor = checked ? '#ffffff' : '#eeeeee';
+          return { ...element, checked: !checked, backgroundColor };
         }
         return element;
       }
     );
     this.checkedState = updatedCheckedState;
-    console.log('handleOnChange', this.checkedState, position);
-    const totalSelected = updatedCheckedState
-      .map((element: any) => element.checked)
-      .reduce((sum: any, currentState: any, index: any) => {
-        if (currentState) {
-          return sum + this.issues[index].value;
-        }
-        return sum;
-      }, 0);
+    const totalSelected = updatedCheckedState.filter((element: CheckedStateInterface) => element.checked).length;
+    
     this.numCheckboxesSelected = totalSelected;
-    console.log;
     this.handleIndeterminateCheckbox(totalSelected);
   }
 
-  handleIndeterminateCheckbox(total: any) {
+  handleIndeterminateCheckbox(total: number) {
     const indeterminateCheckbox = document.getElementById(
       'custom-checkbox-selectDeselectAll'
     );
     let count = 0;
 
-    this.issues.forEach((element: any) => {
-      if (element.status === 'open') {
-        count += 1;
-      }
+    this.issues.forEach((element: ErrorIssue) => {
+      element.status === 'open' ? count++ : count;
     });
 
     if (total === 0) {
-      (indeterminateCheckbox as any).indeterminate = false;
+      (indeterminateCheckbox as HTMLInputElement).indeterminate = false;
       this.selectDeselectAllIsChecked = false;
     }
     if (total > 0 && total < count) {
-      (indeterminateCheckbox as any).indeterminate = true;
+      (indeterminateCheckbox as HTMLInputElement).indeterminate = true;
       this.selectDeselectAllIsChecked = false;
     }
     if (total === count) {
-      (indeterminateCheckbox as any).indeterminate = false;
+      (indeterminateCheckbox as HTMLInputElement).indeterminate = false;
       this.selectDeselectAllIsChecked = true;
     }
   }
 
-  handleSelectDeselectAll(event: any) {
-    let { checked } = event.target;
+  handleSelectDeselectAll(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const checked = target.checked;
 
-    const allTrueArray: any = [];
-    this.issues.forEach((element: any) => {
+    const allTrueArray: CheckedStateInterface[] = [];
+
+    this.issues.forEach((element: ErrorIssue) => {
       if (element.status === 'open') {
         allTrueArray.push({ checked: true, backgroundColor: '#eeeeee' });
       } else {
@@ -98,24 +90,14 @@ export class Table implements OnInit {
       }
     });
 
-    const allFalseArray = new Array(this.issues.length).fill({
+    const allFalseArray: CheckedStateInterface[] = new Array(this.issues.length).fill({
       checked: false,
       backgroundColor: '#ffffff',
     });
-    if (checked) {
-      this.checkedState = allTrueArray;
-    } else {
-      this.checkedState = allFalseArray;
-    }
 
-    const totalSelected = (checked ? allTrueArray : allFalseArray)
-      .map((element: any) => element.checked)
-      .reduce((sum: any, currentState: any, index: any) => {
-        if (currentState && this.issues[index].status === 'open') {
-          return sum + this.issues[index].value;
-        }
-        return sum;
-      }, 0);
+    checked ? this.checkedState = allTrueArray : this.checkedState = allFalseArray;
+    
+    const totalSelected = (checked ? allTrueArray : allFalseArray).filter((element: CheckedStateInterface) => element.checked).length;
     this.numCheckboxesSelected = totalSelected;
     this.selectDeselectAllIsChecked = !this.selectDeselectAllIsChecked;
   }
